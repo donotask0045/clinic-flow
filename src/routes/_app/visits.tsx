@@ -73,8 +73,9 @@ function VisitsPage() {
               <SelectItem value="all">{t("all")}</SelectItem>
               <SelectItem value="pending">{t("pending")}</SelectItem>
               <SelectItem value="in_progress">{t("in_progress")}</SelectItem>
-              <SelectItem value="completed">{t("completed")}</SelectItem>
-              <SelectItem value="cancelled">{t("cancelled")}</SelectItem>
+              <SelectItem value="partially_dispensed">{t("partially_dispensed")}</SelectItem>
+              <SelectItem value="dispensed">{t("dispensed")}</SelectItem>
+              <SelectItem value="closed">{t("closed_status")}</SelectItem>
             </SelectContent>
           </Select>
           {canCreate && (
@@ -112,17 +113,14 @@ function VisitsPage() {
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{v.diagnosis || "—"}</td>
                         <td className="px-4 py-3"><Badge className={priorityColor[v.priority]}>{t(v.priority)}</Badge></td>
-                        <td className="px-4 py-3"><Badge className={statusColor[v.status]}>{t(v.status)}</Badge></td>
+                        <td className="px-4 py-3"><Badge className={statusColor[v.status]}>{t(statusKey(v.status))}</Badge></td>
                         <td className="px-4 py-3 text-end">
-                          {v.status !== "completed" && v.status !== "cancelled" && (
+                          {v.status !== "closed" && (
                             <div className="flex justify-end gap-2">
                               <Button size="sm" variant="outline" onClick={async () => {
                                 try { await close({ data: { visit_id: v.id } }); toast.success(t("visitClosed")); load(); }
                                 catch (e) { toast.error((e as Error).message); }
                               }}><CheckCircle2 className="h-3.5 w-3.5 me-1" />{t("closeVisit")}</Button>
-                              <Button size="sm" variant="ghost" onClick={async () => {
-                                await supabase.from("visits").update({ status: "cancelled" }).eq("id", v.id); load();
-                              }}><X className="h-3.5 w-3.5" /></Button>
                             </div>
                           )}
                         </td>
