@@ -18,8 +18,8 @@ import { Plus, Stethoscope, X, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/visits")({ component: VisitsPage });
 
-type Priority = "low" | "medium" | "high" | "urgent";
-type Status = "pending" | "in_progress" | "completed" | "cancelled";
+type Priority = "low" | "medium" | "high";
+type Status = "pending" | "in_progress" | "partially_dispensed" | "dispensed" | "not_available" | "closed";
 type Visit = {
   id: string; patient_id: string; status: Status; priority: Priority;
   diagnosis: string | null; notes: string | null; created_at: string;
@@ -29,14 +29,15 @@ type Visit = {
 const priorityColor: Record<Priority, string> = {
   low: "bg-muted text-muted-foreground",
   medium: "bg-secondary text-secondary-foreground",
-  high: "bg-warning/20 text-warning-foreground",
-  urgent: "bg-destructive text-destructive-foreground",
+  high: "bg-destructive text-destructive-foreground",
 };
 const statusColor: Record<Status, string> = {
   pending: "bg-warning/20 text-warning-foreground",
   in_progress: "bg-primary/15 text-primary",
-  completed: "bg-success/20 text-success-foreground",
-  cancelled: "bg-muted text-muted-foreground",
+  partially_dispensed: "bg-warning/20 text-warning-foreground",
+  dispensed: "bg-success/20 text-success-foreground",
+  not_available: "bg-destructive text-destructive-foreground",
+  closed: "bg-muted text-muted-foreground",
 };
 
 function VisitsPage() {

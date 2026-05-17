@@ -91,7 +91,7 @@ export const closeVisit = createServerFn({ method: "POST" })
     if (!visit) throw new Error("Visit not found");
 
     await supabaseAdmin.from("visits").update({
-      status: "completed", closed_at: new Date().toISOString(),
+      status: "closed", closed_at: new Date().toISOString(),
     }).eq("id", data.visit_id);
 
     await supabaseAdmin.from("archived_visits").insert({
