@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppVisitsRouteImport } from './routes/_app/visits'
+import { Route as AppUsersRouteImport } from './routes/_app/users'
 import { Route as AppShortagesRouteImport } from './routes/_app/shortages'
 import { Route as AppPharmacyRouteImport } from './routes/_app/pharmacy'
 import { Route as AppPatientsRouteImport } from './routes/_app/patients'
@@ -36,6 +37,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppVisitsRoute = AppVisitsRouteImport.update({
   id: '/visits',
   path: '/visits',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 const AppShortagesRoute = AppShortagesRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/patients': typeof AppPatientsRoute
   '/pharmacy': typeof AppPharmacyRoute
   '/shortages': typeof AppShortagesRoute
+  '/users': typeof AppUsersRoute
   '/visits': typeof AppVisitsRoute
 }
 export interface FileRoutesByTo {
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/patients': typeof AppPatientsRoute
   '/pharmacy': typeof AppPharmacyRoute
   '/shortages': typeof AppShortagesRoute
+  '/users': typeof AppUsersRoute
   '/visits': typeof AppVisitsRoute
   '/': typeof AppIndexRoute
 }
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/_app/patients': typeof AppPatientsRoute
   '/_app/pharmacy': typeof AppPharmacyRoute
   '/_app/shortages': typeof AppShortagesRoute
+  '/_app/users': typeof AppUsersRoute
   '/_app/visits': typeof AppVisitsRoute
   '/_app/': typeof AppIndexRoute
 }
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/patients'
     | '/pharmacy'
     | '/shortages'
+    | '/users'
     | '/visits'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/patients'
     | '/pharmacy'
     | '/shortages'
+    | '/users'
     | '/visits'
     | '/'
   id:
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/_app/patients'
     | '/_app/pharmacy'
     | '/_app/shortages'
+    | '/_app/users'
     | '/_app/visits'
     | '/_app/'
   fileRoutesById: FileRoutesById
@@ -163,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/visits'
       fullPath: '/visits'
       preLoaderRoute: typeof AppVisitsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/shortages': {
@@ -209,6 +228,7 @@ interface AppRouteChildren {
   AppPatientsRoute: typeof AppPatientsRoute
   AppPharmacyRoute: typeof AppPharmacyRoute
   AppShortagesRoute: typeof AppShortagesRoute
+  AppUsersRoute: typeof AppUsersRoute
   AppVisitsRoute: typeof AppVisitsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -219,6 +239,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPatientsRoute: AppPatientsRoute,
   AppPharmacyRoute: AppPharmacyRoute,
   AppShortagesRoute: AppShortagesRoute,
+  AppUsersRoute: AppUsersRoute,
   AppVisitsRoute: AppVisitsRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -232,3 +253,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
