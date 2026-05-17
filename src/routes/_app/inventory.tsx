@@ -132,9 +132,12 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
   useEffect(() => { setF(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 }); }, [editing]);
 
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); setBusy(true);
+    e.preventDefault();
+    const name = (f.name ?? "").trim();
+    if (!name) return toast.error("Name required");
+    setBusy(true);
     const payload = {
-      name: f.name?.trim(), commercial_name: f.commercial_name || null, barcode: f.barcode || null,
+      name, commercial_name: f.commercial_name || null, barcode: f.barcode || null,
       description: f.description || null,
       pills_per_strip: Number(f.pills_per_strip ?? 1), strips_per_box: Number(f.strips_per_box ?? 1),
       minimum_pills: Number(f.minimum_pills ?? 0), total_pills: Number(f.total_pills ?? 0),
@@ -171,7 +174,7 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
 
 function MovementDialog({ target, onClose, onSaved }: { target: Medicine | null; onClose: () => void; onSaved: () => void }) {
   const { t } = useI18n();
-  const [type, setType] = useState<"in" | "out" | "adjust">("in");
+  const [type, setType] = useState<"in" | "out" | "adjustment">("in");
   const [pills, setPills] = useState(0);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -207,11 +210,11 @@ function MovementDialog({ target, onClose, onSaved }: { target: Medicine | null;
               <SelectContent>
                 <SelectItem value="in">{t("stockIn")}</SelectItem>
                 <SelectItem value="out">{t("stockOut")}</SelectItem>
-                <SelectItem value="adjust">{t("stockAdjust")}</SelectItem>
+                <SelectItem value="adjustment">{t("stockAdjust")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5"><Label>{type === "adjust" ? t("totalPills") : t("quantity")} ({t("pill")})</Label>
+          <div className="space-y-1.5"><Label>{type === "adjustment" ? t("totalPills") : t("quantity")} ({t("pill")})</Label>
             <Input type="number" min={0} value={pills} onChange={(e) => setPills(Number(e.target.value))} required />
           </div>
           <div className="space-y-1.5"><Label>{t("reason")}</Label><Input value={reason} onChange={(e) => setReason(e.target.value)} /></div>
