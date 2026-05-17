@@ -1,17 +1,226 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Plus, Pencil, Boxes, ArrowDownToLine, Search } from "lucide-react";
 
-export const Route = createFileRoute("/_app/inventory")({
-  component: function InventoryPage() {
-    const { t } = useI18n();
-    return (
-      <div className="space-y-4">
+export const Route = createFileRoute("/_app/inventory")({ component: InventoryPage });
+
+type Status = "available" | "low_stock" | "out_of_stock" | "expired";
+type Medicine = {
+  id: string; name: string; commercial_name: string | null; barcode: string | null;
+  description: string | null; pills_per_strip: number; strips_per_box: number;
+  minimum_pills: number; total_pills: number; expiry_date: string | null; status: Status;
+};
+
+const statusBadge: Record<Status, string> = {
+  available: "bg-success/20 text-success-foreground",
+  low_stock: "bg-warning/20 text-warning-foreground",
+  out_of_stock: "bg-destructive text-destructive-foreground",
+  expired: "bg-destructive text-destructive-foreground",
+};
+
+function InventoryPage() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const canWrite = user?.role === "admin" || user?.role === "pharmacist";
+  const [rows, setRows] = useState<Medicine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<Medicine | null>(null);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [moving, setMoving] = useState<Medicine | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    let query = supabase.from("medicines").select("*").order("name").limit(500);
+    if (q.trim()) query = query.or(`name.ilike.%${q}%,commercial_name.ilike.%${q}%,barcode.ilike.%${q}%`);
+    const { data, error } = await query;
+    if (error) toast.error(error.message);
+    setRows((data ?? []) as Medicine[]); setLoading(false);
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [q]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{t("inventory")}</h1>
-        <Card><CardHeader><CardTitle>{t("inventory")}</CardTitle></CardHeader>
-          <CardContent><p className="text-sm text-muted-foreground">{t("comingSoon")}</p></CardContent>
-        </Card>
+        {canWrite && (
+          <Dialog open={openEdit} onOpenChange={(o) => { setOpenEdit(o); if (!o) setEditing(null); }}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-1" />{t("addMedicine")}</Button>
+            </DialogTrigger>
+            <MedicineDialog editing={editing} onSaved={() => { setOpenEdit(false); setEditing(null); load(); }} />
+          </Dialog>
+        )}
       </div>
-    );
-  },
-});
+
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`${t("search")} (${t("barcode")}…)`} className="ps-9" />
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Boxes className="h-4 w-4" />{t("inventory")}</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          {loading ? <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+            : rows.length === 0 ? <div className="p-6 text-sm text-muted-foreground">{t("noResults")}</div>
+            : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 text-start">{t("medicine")}</th>
+                      <th className="px-4 py-3 text-start">{t("barcode")}</th>
+                      <th className="px-4 py-3 text-start">{t("totalPills")}</th>
+                      <th className="px-4 py-3 text-start">{t("status")}</th>
+                      <th className="px-4 py-3 text-start">{t("expiryDate")}</th>
+                      <th className="px-4 py-3 text-end">{t("actions")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((m) => (
+                      <tr key={m.id} className="border-t border-border">
+                        <td className="px-4 py-3">
+                          <div className="font-medium">{m.name}</div>
+                          {m.commercial_name && <div className="text-xs text-muted-foreground">{m.commercial_name}</div>}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs">{m.barcode || "—"}</td>
+                        <td className="px-4 py-3 tabular-nums">{m.total_pills} <span className="text-xs text-muted-foreground">/ {m.minimum_pills}</span></td>
+                        <td className="px-4 py-3"><Badge className={statusBadge[m.status]}>{t(statusKey(m.status))}</Badge></td>
+                        <td className="px-4 py-3 text-muted-foreground">{m.expiry_date || "—"}</td>
+                        <td className="px-4 py-3 text-end">
+                          {canWrite && (
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setMoving(m)}><ArrowDownToLine className="h-3.5 w-3.5 me-1" />{t("stockMovement")}</Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setEditing(m); setOpenEdit(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </CardContent>
+      </Card>
+
+      <MovementDialog target={moving} onClose={() => setMoving(null)} onSaved={() => { setMoving(null); load(); }} />
+    </div>
+  );
+}
+
+function statusKey(s: Status): "available" | "lowStockLabel" | "outOfStock" | "expiredLabel" {
+  return s === "available" ? "available" : s === "low_stock" ? "lowStockLabel" : s === "out_of_stock" ? "outOfStock" : "expiredLabel";
+}
+
+function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSaved: () => void }) {
+  const { t } = useI18n();
+  const [f, setF] = useState<Partial<Medicine>>(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setF(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 }); }, [editing]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = (f.name ?? "").trim();
+    if (!name) return toast.error("Name required");
+    setBusy(true);
+    const payload = {
+      name, commercial_name: f.commercial_name || null, barcode: f.barcode || null,
+      description: f.description || null,
+      pills_per_strip: Number(f.pills_per_strip ?? 1), strips_per_box: Number(f.strips_per_box ?? 1),
+      minimum_pills: Number(f.minimum_pills ?? 0), total_pills: Number(f.total_pills ?? 0),
+      expiry_date: f.expiry_date || null,
+    };
+    const { error } = editing
+      ? await supabase.from("medicines").update(payload).eq("id", editing.id)
+      : await supabase.from("medicines").insert(payload);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(editing ? t("updated") : t("created")); onSaved();
+  };
+
+  return (
+    <DialogContent className="max-w-xl">
+      <DialogHeader><DialogTitle>{editing ? t("editMedicine") : t("addMedicine")}</DialogTitle></DialogHeader>
+      <form onSubmit={submit} className="space-y-3 max-h-[70vh] overflow-y-auto pe-1">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="space-y-1.5"><Label>{t("medicine")}</Label><Input required value={f.name ?? ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{t("commercialName")}</Label><Input value={f.commercial_name ?? ""} onChange={(e) => setF({ ...f, commercial_name: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{t("barcode")}</Label><Input value={f.barcode ?? ""} onChange={(e) => setF({ ...f, barcode: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{t("expiryDate")}</Label><Input type="date" value={f.expiry_date ?? ""} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{t("pillsPerStrip")}</Label><Input type="number" min={1} value={f.pills_per_strip ?? 1} onChange={(e) => setF({ ...f, pills_per_strip: Number(e.target.value) })} /></div>
+          <div className="space-y-1.5"><Label>{t("stripsPerBox")}</Label><Input type="number" min={1} value={f.strips_per_box ?? 1} onChange={(e) => setF({ ...f, strips_per_box: Number(e.target.value) })} /></div>
+          <div className="space-y-1.5"><Label>{t("totalPills")}</Label><Input type="number" min={0} value={f.total_pills ?? 0} onChange={(e) => setF({ ...f, total_pills: Number(e.target.value) })} /></div>
+          <div className="space-y-1.5"><Label>{t("minimumPills")}</Label><Input type="number" min={0} value={f.minimum_pills ?? 0} onChange={(e) => setF({ ...f, minimum_pills: Number(e.target.value) })} /></div>
+        </div>
+        <div className="space-y-1.5"><Label>{t("description")}</Label><Textarea value={f.description ?? ""} onChange={(e) => setF({ ...f, description: e.target.value })} rows={2} /></div>
+        <DialogFooter><Button type="submit" disabled={busy}>{busy ? "…" : t("save")}</Button></DialogFooter>
+      </form>
+    </DialogContent>
+  );
+}
+
+function MovementDialog({ target, onClose, onSaved }: { target: Medicine | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useI18n();
+  const [type, setType] = useState<"in" | "out" | "adjustment">("in");
+  const [pills, setPills] = useState(0);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { if (target) { setType("in"); setPills(0); setReason(""); } }, [target]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); if (!target) return; setBusy(true);
+    let delta = 0;
+    let newTotal = target.total_pills;
+    if (type === "in") { delta = pills; newTotal = target.total_pills + pills; }
+    else if (type === "out") { delta = -pills; newTotal = Math.max(0, target.total_pills - pills); }
+    else { delta = pills - target.total_pills; newTotal = pills; }
+
+    const { error: uErr } = await supabase.from("medicines").update({ total_pills: newTotal }).eq("id", target.id);
+    if (uErr) { setBusy(false); return toast.error(uErr.message); }
+    const { error: smErr } = await supabase.from("stock_movements").insert({
+      medicine_id: target.id, movement_type: type, pills_delta: delta, reason: reason || null,
+    });
+    setBusy(false);
+    if (smErr) return toast.error(smErr.message);
+    toast.success(t("updated")); onSaved();
+  };
+
+  return (
+    <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{t("stockMovement")} — {target?.name}</DialogTitle></DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="space-y-1.5"><Label>{t("movementType")}</Label>
+            <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in">{t("stockIn")}</SelectItem>
+                <SelectItem value="out">{t("stockOut")}</SelectItem>
+                <SelectItem value="adjustment">{t("stockAdjust")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5"><Label>{type === "adjustment" ? t("totalPills") : t("quantity")} ({t("pill")})</Label>
+            <Input type="number" min={0} value={pills} onChange={(e) => setPills(Number(e.target.value))} required />
+          </div>
+          <div className="space-y-1.5"><Label>{t("reason")}</Label><Input value={reason} onChange={(e) => setReason(e.target.value)} /></div>
+          <DialogFooter><Button type="submit" disabled={busy}>{busy ? "…" : t("recordMovement")}</Button></DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
