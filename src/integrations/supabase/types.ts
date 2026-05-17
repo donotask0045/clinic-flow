@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       archived_visits: {
         Row: {
           archived_at: string
@@ -63,7 +84,15 @@ export type Database = {
           snapshot?: Json
           visit_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "av_visit_fk"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -131,7 +160,50 @@ export type Database = {
             referencedRelation: "medicines"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ds_med_fk"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      excel_imports: {
+        Row: {
+          created_at: string
+          entity_type: string
+          errors: Json | null
+          failed_rows: number
+          file_name: string | null
+          id: string
+          imported_by: string | null
+          success_rows: number
+          total_rows: number
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          errors?: Json | null
+          failed_rows?: number
+          file_name?: string | null
+          id?: string
+          imported_by?: string | null
+          success_rows?: number
+          total_rows?: number
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          errors?: Json | null
+          failed_rows?: number
+          file_name?: string | null
+          id?: string
+          imported_by?: string | null
+          success_rows?: number
+          total_rows?: number
+        }
+        Relationships: []
       }
       inventory_counts: {
         Row: {
@@ -171,6 +243,13 @@ export type Database = {
           previous_pills?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "ic_med_fk"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_counts_medicine_id_fkey"
             columns: ["medicine_id"]
@@ -337,6 +416,20 @@ export type Database = {
             referencedRelation: "prescriptions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rxi_med_fk"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rxi_rx_fk"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prescriptions: {
@@ -358,6 +451,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "prescriptions_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rx_visit_fk"
             columns: ["visit_id"]
             isOneToOne: false
             referencedRelation: "visits"
@@ -425,6 +525,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sh_med_fk"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shortages_medicine_id_fkey"
             columns: ["medicine_id"]
             isOneToOne: false
@@ -462,6 +569,13 @@ export type Database = {
           reason?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sm_med_fk"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_movements_medicine_id_fkey"
             columns: ["medicine_id"]
@@ -506,6 +620,20 @@ export type Database = {
           visit_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "uf_patient_fk"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uf_visit_fk"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "uploaded_files_patient_id_fkey"
             columns: ["patient_id"]
@@ -584,6 +712,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visits_patient_fk"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visits_patient_id_fkey"
             columns: ["patient_id"]
