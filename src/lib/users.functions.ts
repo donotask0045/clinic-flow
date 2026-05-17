@@ -81,7 +81,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context.userId);
     if (data.full_name !== undefined || data.is_active !== undefined) {
-      const patch: Record<string, unknown> = {};
+      const patch: { full_name?: string; is_active?: boolean } = {};
       if (data.full_name !== undefined) patch.full_name = data.full_name;
       if (data.is_active !== undefined) patch.is_active = data.is_active;
       const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", data.user_id);
