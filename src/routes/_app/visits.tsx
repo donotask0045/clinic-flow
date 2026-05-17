@@ -40,6 +40,9 @@ const statusColor: Record<Status, string> = {
   closed: "bg-muted text-muted-foreground",
 };
 
+const statusKey = (s: Status): "pending" | "in_progress" | "partially_dispensed" | "dispensed_status" | "not_available" | "closed_status" =>
+  s === "dispensed" ? "dispensed_status" : s === "closed" ? "closed_status" : s;
+
 function VisitsPage() {
   const { t } = useI18n();
   const { user } = useAuth();
