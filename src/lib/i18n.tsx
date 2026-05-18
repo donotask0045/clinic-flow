@@ -92,6 +92,12 @@ const dict = {
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
     delete: "Delete", confirmDelete: "Are you sure?",
+    // Shortages
+    missingPills: "Missing pills", requestCount: "Requests", lastRequested: "Last requested",
+    resolve: "Resolve", resolved: "Resolved", unresolved: "Unresolved", markResolved: "Mark resolved", noShortages: "No shortages",
+    // Audit
+    action: "Action", entity: "Entity", actor: "Actor", when: "When", ipAddress: "IP", device: "Device",
+    beforeData: "Before", afterData: "After", noAudit: "No audit entries", viewDetails: "View details",
   },
   ar: {
     appName: "العيادة والصيدلية",
