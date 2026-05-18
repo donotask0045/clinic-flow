@@ -456,13 +456,6 @@ export type Database = {
             referencedRelation: "visits"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "rx_visit_fk"
-            columns: ["visit_id"]
-            isOneToOne: false
-            referencedRelation: "visits"
-            referencedColumns: ["id"]
-          },
         ]
       }
       profiles: {
