@@ -85,10 +85,11 @@ export const closeVisit = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ visit_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     await assertRole(context.userId, ["admin", "doctor", "pharmacist"]);
-    const { data: visit } = await supabaseAdmin
+    const { data: visit, error: visitErr } = await supabaseAdmin
       .from("visits").select("*, patients(*), prescriptions(*, prescription_items(*, medicines(name)))")
       .eq("id", data.visit_id).maybeSingle();
-    if (!visit) throw new Error("Visit not found");
+    if (visitErr) throw new Error(`Visit fetch failed: ${visitErr.message}`);
+    if (!visit) throw new Error(`Visit not found: ${data.visit_id}`);
 
     await supabaseAdmin.from("visits").update({
       status: "closed", closed_at: new Date().toISOString(),
