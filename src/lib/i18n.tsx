@@ -92,6 +92,12 @@ const dict = {
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
     delete: "Delete", confirmDelete: "Are you sure?",
+    // Shortages
+    missingPills: "Missing pills", requestCount: "Requests", lastRequested: "Last requested",
+    resolve: "Resolve", resolved: "Resolved", unresolved: "Unresolved", markResolved: "Mark resolved", noShortages: "No shortages",
+    // Audit
+    action: "Action", entity: "Entity", actor: "Actor", when: "When", ipAddress: "IP", device: "Device",
+    beforeData: "Before", afterData: "After", noAudit: "No audit entries", viewDetails: "View details",
   },
   ar: {
     appName: "العيادة والصيدلية",
@@ -177,6 +183,10 @@ const dict = {
     description: "الوصف",
     edit: "تعديل", view: "عرض", details: "تفاصيل", close: "إغلاق", filter: "تصفية", all: "الكل",
     delete: "حذف", confirmDelete: "هل أنت متأكد؟",
+    missingPills: "أقراص ناقصة", requestCount: "عدد الطلبات", lastRequested: "آخر طلب",
+    resolve: "حل", resolved: "تم الحل", unresolved: "غير محلولة", markResolved: "وضع كمحلول", noShortages: "لا توجد نواقص",
+    action: "الإجراء", entity: "الكيان", actor: "المنفّذ", when: "الوقت", ipAddress: "IP", device: "الجهاز",
+    beforeData: "قبل", afterData: "بعد", noAudit: "لا توجد سجلات", viewDetails: "عرض التفاصيل",
   },
 } as const;
 
