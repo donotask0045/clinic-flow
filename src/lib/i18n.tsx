@@ -183,6 +183,10 @@ const dict = {
     description: "الوصف",
     edit: "تعديل", view: "عرض", details: "تفاصيل", close: "إغلاق", filter: "تصفية", all: "الكل",
     delete: "حذف", confirmDelete: "هل أنت متأكد؟",
+    missingPills: "أقراص ناقصة", requestCount: "عدد الطلبات", lastRequested: "آخر طلب",
+    resolve: "حل", resolved: "تم الحل", unresolved: "غير محلولة", markResolved: "وضع كمحلول", noShortages: "لا توجد نواقص",
+    action: "الإجراء", entity: "الكيان", actor: "المنفّذ", when: "الوقت", ipAddress: "IP", device: "الجهاز",
+    beforeData: "قبل", afterData: "بعد", noAudit: "لا توجد سجلات", viewDetails: "عرض التفاصيل",
   },
 } as const;
 
