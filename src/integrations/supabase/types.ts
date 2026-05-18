@@ -416,20 +416,6 @@ export type Database = {
             referencedRelation: "prescriptions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "rxi_med_fk"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rxi_rx_fk"
-            columns: ["prescription_id"]
-            isOneToOne: false
-            referencedRelation: "prescriptions"
-            referencedColumns: ["id"]
-          },
         ]
       }
       prescriptions: {
