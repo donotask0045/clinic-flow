@@ -1,0 +1,1 @@
+ALTER TABLE public.prescriptions DROP CONSTRAINT IF EXISTS rx_visit_fk;
