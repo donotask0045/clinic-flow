@@ -90,7 +90,7 @@ const dict = {
     available: "Available", lowStockLabel: "Low stock", outOfStock: "Out of stock", expiredLabel: "Expired",
     description: "Description",
     form: "Form", formTablet: "Tablet", formOintment: "Ointment", formSyrup: "Syrup", formInjection: "Injection", formOther: "Other",
-    totalUnits: "Total units", minimumUnits: "Min. units", unit: "Unit", box: "Box",
+    totalUnits: "Total units", minimumUnits: "Min. units",
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
     delete: "Delete", confirmDelete: "Are you sure?",
