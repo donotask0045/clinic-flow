@@ -98,7 +98,9 @@ function InventoryPage() {
                           {m.commercial_name && <div className="text-xs text-muted-foreground">{m.commercial_name}</div>}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs">{m.barcode || "—"}</td>
-                        <td className="px-4 py-3 tabular-nums">{m.total_pills} <span className="text-xs text-muted-foreground">/ {m.minimum_pills}</span></td>
+                        <td className="px-4 py-3 tabular-nums">
+                          {m.total_pills} <span className="text-xs text-muted-foreground">/ {m.minimum_pills} {t(formUnitKey(m.form))}</span>
+                        </td>
                         <td className="px-4 py-3"><Badge className={statusBadge[m.status]}>{t(statusKey(m.status))}</Badge></td>
                         <td className="px-4 py-3 text-muted-foreground">{m.expiry_date || "—"}</td>
                         <td className="px-4 py-3 text-end">
