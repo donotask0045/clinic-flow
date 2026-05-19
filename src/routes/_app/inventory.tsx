@@ -17,10 +17,12 @@ import { Plus, Pencil, Boxes, ArrowDownToLine, Search } from "lucide-react";
 export const Route = createFileRoute("/_app/inventory")({ component: InventoryPage });
 
 type Status = "available" | "low_stock" | "out_of_stock" | "expired";
+type Form = "tablet" | "ointment" | "syrup" | "injection" | "other";
 type Medicine = {
   id: string; name: string; commercial_name: string | null; barcode: string | null;
   description: string | null; pills_per_strip: number; strips_per_box: number;
   minimum_pills: number; total_pills: number; expiry_date: string | null; status: Status;
+  form: Form;
 };
 
 const statusBadge: Record<Status, string> = {
