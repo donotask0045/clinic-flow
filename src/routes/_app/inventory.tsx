@@ -202,47 +202,6 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
             </>
           )}
         </div>
-
-function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSaved: () => void }) {
-  const { t } = useI18n();
-  const [f, setF] = useState<Partial<Medicine>>(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 });
-  const [busy, setBusy] = useState(false);
-  useEffect(() => { setF(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 }); }, [editing]);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = (f.name ?? "").trim();
-    if (!name) return toast.error("Name required");
-    setBusy(true);
-    const payload = {
-      name, commercial_name: f.commercial_name || null, barcode: f.barcode || null,
-      description: f.description || null,
-      pills_per_strip: Number(f.pills_per_strip ?? 1), strips_per_box: Number(f.strips_per_box ?? 1),
-      minimum_pills: Number(f.minimum_pills ?? 0), total_pills: Number(f.total_pills ?? 0),
-      expiry_date: f.expiry_date || null,
-    };
-    const { error } = editing
-      ? await supabase.from("medicines").update(payload).eq("id", editing.id)
-      : await supabase.from("medicines").insert(payload);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(editing ? t("updated") : t("created")); onSaved();
-  };
-
-  return (
-    <DialogContent className="max-w-xl">
-      <DialogHeader><DialogTitle>{editing ? t("editMedicine") : t("addMedicine")}</DialogTitle></DialogHeader>
-      <form onSubmit={submit} className="space-y-3 max-h-[70vh] overflow-y-auto pe-1">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="space-y-1.5"><Label>{t("medicine")}</Label><Input required value={f.name ?? ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{t("commercialName")}</Label><Input value={f.commercial_name ?? ""} onChange={(e) => setF({ ...f, commercial_name: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{t("barcode")}</Label><Input value={f.barcode ?? ""} onChange={(e) => setF({ ...f, barcode: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{t("expiryDate")}</Label><Input type="date" value={f.expiry_date ?? ""} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{t("pillsPerStrip")}</Label><Input type="number" min={1} value={f.pills_per_strip ?? 1} onChange={(e) => setF({ ...f, pills_per_strip: Number(e.target.value) })} /></div>
-          <div className="space-y-1.5"><Label>{t("stripsPerBox")}</Label><Input type="number" min={1} value={f.strips_per_box ?? 1} onChange={(e) => setF({ ...f, strips_per_box: Number(e.target.value) })} /></div>
-          <div className="space-y-1.5"><Label>{t("totalPills")}</Label><Input type="number" min={0} value={f.total_pills ?? 0} onChange={(e) => setF({ ...f, total_pills: Number(e.target.value) })} /></div>
-          <div className="space-y-1.5"><Label>{t("minimumPills")}</Label><Input type="number" min={0} value={f.minimum_pills ?? 0} onChange={(e) => setF({ ...f, minimum_pills: Number(e.target.value) })} /></div>
-        </div>
         <div className="space-y-1.5"><Label>{t("description")}</Label><Textarea value={f.description ?? ""} onChange={(e) => setF({ ...f, description: e.target.value })} rows={2} /></div>
         <DialogFooter><Button type="submit" disabled={busy}>{busy ? "…" : t("save")}</Button></DialogFooter>
       </form>
