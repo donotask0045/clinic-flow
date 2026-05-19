@@ -89,6 +89,8 @@ const dict = {
     movementType: "Type", reason: "Reason", recordMovement: "Record",
     available: "Available", lowStockLabel: "Low stock", outOfStock: "Out of stock", expiredLabel: "Expired",
     description: "Description",
+    form: "Form", formTablet: "Tablet", formOintment: "Ointment", formSyrup: "Syrup", formInjection: "Injection", formOther: "Other",
+    totalUnits: "Total units", minimumUnits: "Min. units",
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
     delete: "Delete", confirmDelete: "Are you sure?",
@@ -181,6 +183,8 @@ const dict = {
     movementType: "النوع", reason: "السبب", recordMovement: "تسجيل",
     available: "متوفر", lowStockLabel: "مخزون منخفض", outOfStock: "نفد", expiredLabel: "منتهي",
     description: "الوصف",
+    form: "الشكل", formTablet: "أقراص", formOintment: "مرهم", formSyrup: "شراب", formInjection: "حقن", formOther: "أخرى",
+    totalUnits: "إجمالي الوحدات", minimumUnits: "الحد الأدنى للوحدات",
     edit: "تعديل", view: "عرض", details: "تفاصيل", close: "إغلاق", filter: "تصفية", all: "الكل",
     delete: "حذف", confirmDelete: "هل أنت متأكد؟",
     missingPills: "أقراص ناقصة", requestCount: "عدد الطلبات", lastRequested: "آخر طلب",

@@ -160,13 +160,6 @@ export type Database = {
             referencedRelation: "medicines"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "ds_med_fk"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
-            referencedColumns: ["id"]
-          },
         ]
       }
       excel_imports: {
@@ -244,13 +237,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "ic_med_fk"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "inventory_counts_medicine_id_fkey"
             columns: ["medicine_id"]
             isOneToOne: false
@@ -266,6 +252,7 @@ export type Database = {
           created_at: string
           description: string | null
           expiry_date: string | null
+          form: Database["public"]["Enums"]["medicine_form"]
           id: string
           minimum_pills: number
           name: string
@@ -281,6 +268,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           expiry_date?: string | null
+          form?: Database["public"]["Enums"]["medicine_form"]
           id?: string
           minimum_pills?: number
           name: string
@@ -296,6 +284,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           expiry_date?: string | null
+          form?: Database["public"]["Enums"]["medicine_form"]
           id?: string
           minimum_pills?: number
           name?: string
@@ -504,13 +493,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "sh_med_fk"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "shortages_medicine_id_fkey"
             columns: ["medicine_id"]
             isOneToOne: false
@@ -548,13 +530,6 @@ export type Database = {
           reason?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "sm_med_fk"
-            columns: ["medicine_id"]
-            isOneToOne: false
-            referencedRelation: "medicines"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "stock_movements_medicine_id_fkey"
             columns: ["medicine_id"]
@@ -599,20 +574,6 @@ export type Database = {
           visit_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "uf_patient_fk"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "uf_visit_fk"
-            columns: ["visit_id"]
-            isOneToOne: false
-            referencedRelation: "visits"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "uploaded_files_patient_id_fkey"
             columns: ["patient_id"]
@@ -720,6 +681,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "doctor" | "pharmacist"
+      medicine_form: "tablet" | "ointment" | "syrup" | "injection" | "other"
       medicine_status: "available" | "low_stock" | "out_of_stock" | "expired"
       medicine_unit: "box" | "strip" | "pill"
       stock_movement_type: "in" | "out" | "adjustment" | "count"
@@ -859,6 +821,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "doctor", "pharmacist"],
+      medicine_form: ["tablet", "ointment", "syrup", "injection", "other"],
       medicine_status: ["available", "low_stock", "out_of_stock", "expired"],
       medicine_unit: ["box", "strip", "pill"],
       stock_movement_type: ["in", "out", "adjustment", "count"],

@@ -17,10 +17,12 @@ import { Plus, Pencil, Boxes, ArrowDownToLine, Search } from "lucide-react";
 export const Route = createFileRoute("/_app/inventory")({ component: InventoryPage });
 
 type Status = "available" | "low_stock" | "out_of_stock" | "expired";
+type Form = "tablet" | "ointment" | "syrup" | "injection" | "other";
 type Medicine = {
   id: string; name: string; commercial_name: string | null; barcode: string | null;
   description: string | null; pills_per_strip: number; strips_per_box: number;
   minimum_pills: number; total_pills: number; expiry_date: string | null; status: Status;
+  form: Form;
 };
 
 const statusBadge: Record<Status, string> = {
@@ -96,7 +98,9 @@ function InventoryPage() {
                           {m.commercial_name && <div className="text-xs text-muted-foreground">{m.commercial_name}</div>}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs">{m.barcode || "—"}</td>
-                        <td className="px-4 py-3 tabular-nums">{m.total_pills} <span className="text-xs text-muted-foreground">/ {m.minimum_pills}</span></td>
+                        <td className="px-4 py-3 tabular-nums">
+                          {m.total_pills} <span className="text-xs text-muted-foreground">/ {m.minimum_pills} {t(formUnitKey(m.form))}</span>
+                        </td>
                         <td className="px-4 py-3"><Badge className={statusBadge[m.status]}>{t(statusKey(m.status))}</Badge></td>
                         <td className="px-4 py-3 text-muted-foreground">{m.expiry_date || "—"}</td>
                         <td className="px-4 py-3 text-end">
@@ -125,11 +129,18 @@ function statusKey(s: Status): "available" | "lowStockLabel" | "outOfStock" | "e
   return s === "available" ? "available" : s === "low_stock" ? "lowStockLabel" : s === "out_of_stock" ? "outOfStock" : "expiredLabel";
 }
 
+function formUnitKey(f: Form): "pill" | "box" {
+  return f === "tablet" ? "pill" : "box";
+}
+
 function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSaved: () => void }) {
   const { t } = useI18n();
-  const [f, setF] = useState<Partial<Medicine>>(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 });
+  const init: Partial<Medicine> = { form: "tablet", pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 };
+  const [f, setF] = useState<Partial<Medicine>>(editing ?? init);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setF(editing ?? { pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 }); }, [editing]);
+  useEffect(() => { setF(editing ?? init); /* eslint-disable-next-line */ }, [editing]);
+
+  const isTablet = (f.form ?? "tablet") === "tablet";
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,13 +150,16 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
     const payload = {
       name, commercial_name: f.commercial_name || null, barcode: f.barcode || null,
       description: f.description || null,
-      pills_per_strip: Number(f.pills_per_strip ?? 1), strips_per_box: Number(f.strips_per_box ?? 1),
-      minimum_pills: Number(f.minimum_pills ?? 0), total_pills: Number(f.total_pills ?? 0),
+      form: f.form ?? "tablet",
+      pills_per_strip: isTablet ? Number(f.pills_per_strip ?? 1) : 1,
+      strips_per_box: isTablet ? Number(f.strips_per_box ?? 1) : 1,
+      minimum_pills: Number(f.minimum_pills ?? 0),
+      total_pills: Number(f.total_pills ?? 0),
       expiry_date: f.expiry_date || null,
     };
     const { error } = editing
-      ? await supabase.from("medicines").update(payload).eq("id", editing.id)
-      : await supabase.from("medicines").insert(payload);
+      ? await supabase.from("medicines").update(payload as never).eq("id", editing.id)
+      : await supabase.from("medicines").insert(payload as never);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(editing ? t("updated") : t("created")); onSaved();
@@ -158,12 +172,35 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="space-y-1.5"><Label>{t("medicine")}</Label><Input required value={f.name ?? ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
           <div className="space-y-1.5"><Label>{t("commercialName")}</Label><Input value={f.commercial_name ?? ""} onChange={(e) => setF({ ...f, commercial_name: e.target.value })} /></div>
+          <div className="space-y-1.5">
+            <Label>{t("form")}</Label>
+            <Select value={f.form ?? "tablet"} onValueChange={(v) => setF({ ...f, form: v as Form })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tablet">{t("formTablet")}</SelectItem>
+                <SelectItem value="ointment">{t("formOintment")}</SelectItem>
+                <SelectItem value="syrup">{t("formSyrup")}</SelectItem>
+                <SelectItem value="injection">{t("formInjection")}</SelectItem>
+                <SelectItem value="other">{t("formOther")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1.5"><Label>{t("barcode")}</Label><Input value={f.barcode ?? ""} onChange={(e) => setF({ ...f, barcode: e.target.value })} /></div>
           <div className="space-y-1.5"><Label>{t("expiryDate")}</Label><Input type="date" value={f.expiry_date ?? ""} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{t("pillsPerStrip")}</Label><Input type="number" min={1} value={f.pills_per_strip ?? 1} onChange={(e) => setF({ ...f, pills_per_strip: Number(e.target.value) })} /></div>
-          <div className="space-y-1.5"><Label>{t("stripsPerBox")}</Label><Input type="number" min={1} value={f.strips_per_box ?? 1} onChange={(e) => setF({ ...f, strips_per_box: Number(e.target.value) })} /></div>
-          <div className="space-y-1.5"><Label>{t("totalPills")}</Label><Input type="number" min={0} value={f.total_pills ?? 0} onChange={(e) => setF({ ...f, total_pills: Number(e.target.value) })} /></div>
-          <div className="space-y-1.5"><Label>{t("minimumPills")}</Label><Input type="number" min={0} value={f.minimum_pills ?? 0} onChange={(e) => setF({ ...f, minimum_pills: Number(e.target.value) })} /></div>
+          {isTablet && (
+            <>
+              <div className="space-y-1.5"><Label>{t("pillsPerStrip")}</Label><Input type="number" min={1} value={f.pills_per_strip ?? 1} onChange={(e) => setF({ ...f, pills_per_strip: Number(e.target.value) })} /></div>
+              <div className="space-y-1.5"><Label>{t("stripsPerBox")}</Label><Input type="number" min={1} value={f.strips_per_box ?? 1} onChange={(e) => setF({ ...f, strips_per_box: Number(e.target.value) })} /></div>
+              <div className="space-y-1.5"><Label>{t("totalPills")}</Label><Input type="number" min={0} value={f.total_pills ?? 0} onChange={(e) => setF({ ...f, total_pills: Number(e.target.value) })} /></div>
+              <div className="space-y-1.5"><Label>{t("minimumPills")}</Label><Input type="number" min={0} value={f.minimum_pills ?? 0} onChange={(e) => setF({ ...f, minimum_pills: Number(e.target.value) })} /></div>
+            </>
+          )}
+          {!isTablet && (
+            <>
+              <div className="space-y-1.5"><Label>{t("totalUnits")} ({t("box")})</Label><Input type="number" min={0} value={f.total_pills ?? 0} onChange={(e) => setF({ ...f, total_pills: Number(e.target.value) })} /></div>
+              <div className="space-y-1.5"><Label>{t("minimumUnits")} ({t("box")})</Label><Input type="number" min={0} value={f.minimum_pills ?? 0} onChange={(e) => setF({ ...f, minimum_pills: Number(e.target.value) })} /></div>
+            </>
+          )}
         </div>
         <div className="space-y-1.5"><Label>{t("description")}</Label><Textarea value={f.description ?? ""} onChange={(e) => setF({ ...f, description: e.target.value })} rows={2} /></div>
         <DialogFooter><Button type="submit" disabled={busy}>{busy ? "…" : t("save")}</Button></DialogFooter>

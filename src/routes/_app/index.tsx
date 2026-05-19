@@ -75,10 +75,11 @@ function DashboardPage() {
 
       <Card>
         <CardHeader><CardTitle>{t("quickActions")}</CardTitle></CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Foundation ready. Modules (Patients, Visits, Pharmacy, Inventory, Reports) will be added in Phase 2.
-          </p>
+        <CardContent className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <a href="/patients" className="rounded-lg border bg-card p-4 text-sm font-medium hover:bg-accent transition-colors">{t("patients")}</a>
+          <a href="/visits" className="rounded-lg border bg-card p-4 text-sm font-medium hover:bg-accent transition-colors">{t("visits")}</a>
+          <a href="/pharmacy" className="rounded-lg border bg-card p-4 text-sm font-medium hover:bg-accent transition-colors">{t("pharmacyQueue")}</a>
+          <a href="/inventory" className="rounded-lg border bg-card p-4 text-sm font-medium hover:bg-accent transition-colors">{t("inventory")}</a>
         </CardContent>
       </Card>
     </div>
