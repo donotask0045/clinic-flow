@@ -22,7 +22,7 @@ type Medicine = {
   id: string; name: string; commercial_name: string | null; barcode: string | null;
   description: string | null; pills_per_strip: number; strips_per_box: number;
   minimum_pills: number; total_pills: number; expiry_date: string | null; status: Status;
-  form: Form;
+  form: Form; category: string | null;
 };
 
 const statusBadge: Record<Status, string> = {
@@ -151,6 +151,7 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
       name, commercial_name: f.commercial_name || null, barcode: f.barcode || null,
       description: f.description || null,
       form: f.form ?? "tablet",
+      category: (f.category ?? "").trim() || null,
       pills_per_strip: isTablet ? Number(f.pills_per_strip ?? 1) : 1,
       strips_per_box: isTablet ? Number(f.strips_per_box ?? 1) : 1,
       minimum_pills: Number(f.minimum_pills ?? 0),
@@ -187,6 +188,11 @@ function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSave
           </div>
           <div className="space-y-1.5"><Label>{t("barcode")}</Label><Input value={f.barcode ?? ""} onChange={(e) => setF({ ...f, barcode: e.target.value })} /></div>
           <div className="space-y-1.5"><Label>{t("expiryDate")}</Label><Input type="date" value={f.expiry_date ?? ""} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label>{t("category")}</Label>
+            <Input list="medicine-categories" value={f.category ?? ""} onChange={(e) => setF({ ...f, category: e.target.value })} placeholder={t("category")} />
+            <CategoryDatalist />
+          </div>
           {isTablet && (
             <>
               <div className="space-y-1.5"><Label>{t("pillsPerStrip")}</Label><Input type="number" min={1} value={f.pills_per_strip ?? 1} onChange={(e) => setF({ ...f, pills_per_strip: Number(e.target.value) })} /></div>
