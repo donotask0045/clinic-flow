@@ -248,6 +248,7 @@ export type Database = {
       medicines: {
         Row: {
           barcode: string | null
+          category: string | null
           commercial_name: string | null
           created_at: string
           description: string | null
@@ -264,6 +265,7 @@ export type Database = {
         }
         Insert: {
           barcode?: string | null
+          category?: string | null
           commercial_name?: string | null
           created_at?: string
           description?: string | null
@@ -280,6 +282,7 @@ export type Database = {
         }
         Update: {
           barcode?: string | null
+          category?: string | null
           commercial_name?: string | null
           created_at?: string
           description?: string | null
@@ -683,7 +686,15 @@ export type Database = {
       app_role: "admin" | "doctor" | "pharmacist"
       medicine_form: "tablet" | "ointment" | "syrup" | "injection" | "other"
       medicine_status: "available" | "low_stock" | "out_of_stock" | "expired"
-      medicine_unit: "box" | "strip" | "pill"
+      medicine_unit:
+        | "box"
+        | "strip"
+        | "pill"
+        | "injection"
+        | "syrup"
+        | "ointment"
+        | "ampoule"
+        | "tube"
       stock_movement_type: "in" | "out" | "adjustment" | "count"
       visit_priority: "high" | "medium" | "low"
       visit_status:
@@ -823,7 +834,16 @@ export const Constants = {
       app_role: ["admin", "doctor", "pharmacist"],
       medicine_form: ["tablet", "ointment", "syrup", "injection", "other"],
       medicine_status: ["available", "low_stock", "out_of_stock", "expired"],
-      medicine_unit: ["box", "strip", "pill"],
+      medicine_unit: [
+        "box",
+        "strip",
+        "pill",
+        "injection",
+        "syrup",
+        "ointment",
+        "ampoule",
+        "tube",
+      ],
       stock_movement_type: ["in", "out", "adjustment", "count"],
       visit_priority: ["high", "medium", "low"],
       visit_status: [

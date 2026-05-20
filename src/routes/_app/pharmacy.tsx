@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_app/pharmacy")({ component: PharmacyPage
 
 type Item = {
   id: string; medicine_id: string; quantity: number; dispensed_pills: number;
-  unit: "pill" | "strip" | "box";
+  unit: "pill" | "strip" | "box" | "injection" | "syrup" | "ointment" | "ampoule" | "tube";
   medicines: { name: string; total_pills: number; pills_per_strip: number; strips_per_box: number } | null;
 };
 type QueueVisit = {
@@ -29,7 +29,8 @@ const pillsFor = (it: Item) => {
   if (!m) return it.quantity;
   if (it.unit === "pill") return it.quantity;
   if (it.unit === "strip") return it.quantity * m.pills_per_strip;
-  return it.quantity * m.pills_per_strip * m.strips_per_box;
+  if (it.unit === "box") return it.quantity * m.pills_per_strip * m.strips_per_box;
+  return it.quantity;
 };
 
 function PharmacyPage() {
