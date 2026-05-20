@@ -133,6 +133,18 @@ function formUnitKey(f: Form): "pill" | "box" {
   return f === "tablet" ? "pill" : "box";
 }
 
+function CategoryDatalist() {
+  const [cats, setCats] = useState<string[]>([]);
+  useEffect(() => {
+    supabase.from("medicines").select("category").not("category", "is", null).limit(500)
+      .then(({ data }) => {
+        const uniq = Array.from(new Set((data ?? []).map((r: { category: string | null }) => r.category).filter(Boolean) as string[]));
+        setCats(uniq.sort());
+      });
+  }, []);
+  return <datalist id="medicine-categories">{cats.map((c) => <option key={c} value={c} />)}</datalist>;
+}
+
 function MedicineDialog({ editing, onSaved }: { editing: Medicine | null; onSaved: () => void }) {
   const { t } = useI18n();
   const init: Partial<Medicine> = { form: "tablet", pills_per_strip: 10, strips_per_box: 1, minimum_pills: 0, total_pills: 0 };
