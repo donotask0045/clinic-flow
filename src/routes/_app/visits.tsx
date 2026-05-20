@@ -141,38 +141,53 @@ function VisitsPage() {
   );
 }
 
-type RxItem = { medicine_id: string; quantity: number; unit: "pill" | "strip" | "box"; notes?: string };
+type Unit = "pill" | "strip" | "box" | "injection" | "syrup" | "ointment" | "ampoule" | "tube";
+type RxItem = { medicine_id: string; quantity: number; unit: Unit; notes?: string };
+type PatientOpt = { id: string; full_name: string; military_number: string };
+type MedOpt = { id: string; name: string; commercial_name: string | null; category: string | null; form: string };
+
+const UNITS: Unit[] = ["pill", "strip", "box", "injection", "syrup", "ointment", "ampoule", "tube"];
+
+function defaultUnitFor(form: string): Unit {
+  switch (form) {
+    case "tablet": return "pill";
+    case "injection": return "injection";
+    case "syrup": return "syrup";
+    case "ointment": return "ointment";
+    default: return "box";
+  }
+}
 
 function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [patients, setPatients] = useState<{ id: string; full_name: string; military_number: string }[]>([]);
-  const [meds, setMeds] = useState<{ id: string; name: string }[]>([]);
+  const [patients, setPatients] = useState<PatientOpt[]>([]);
+  const [meds, setMeds] = useState<MedOpt[]>([]);
   const [patient_id, setPatientId] = useState("");
-  const [priority, setPriority] = useState<Priority>("medium");
-  const [diagnosis, setDiagnosis] = useState("");
-  const [notes, setNotes] = useState("");
   const [items, setItems] = useState<RxItem[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.from("patients").select("id, full_name, military_number").order("full_name").limit(500)
-      .then(({ data }) => setPatients(data ?? []));
-    supabase.from("medicines").select("id, name").order("name").limit(500)
-      .then(({ data }) => setMeds(data ?? []));
+    supabase.from("patients").select("id, full_name, military_number").order("full_name").limit(2000)
+      .then(({ data }) => setPatients((data ?? []) as PatientOpt[]));
+    supabase.from("medicines").select("id, name, commercial_name, category, form").order("name").limit(2000)
+      .then(({ data }) => setMeds((data ?? []) as MedOpt[]));
   }, []);
 
-  const addItem = () => setItems((s) => [...s, { medicine_id: meds[0]?.id ?? "", quantity: 1, unit: "pill" }]);
   const update = (i: number, patch: Partial<RxItem>) => setItems((s) => s.map((it, idx) => idx === i ? { ...it, ...patch } : it));
   const remove = (i: number) => setItems((s) => s.filter((_, idx) => idx !== i));
+  const addMedicine = (m: MedOpt) => {
+    if (items.some((it) => it.medicine_id === m.id)) return;
+    setItems((s) => [...s, { medicine_id: m.id, quantity: 1, unit: defaultUnitFor(m.form) }]);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patient_id) return toast.error(t("selectPatient"));
     setBusy(true);
     const { data: visit, error: vErr } = await supabase.from("visits").insert({
-      patient_id, priority, diagnosis: diagnosis || null, notes: notes || null,
-      doctor_id: user?.id ?? null, status: items.length > 0 ? "in_progress" : "pending",
+      patient_id, doctor_id: user?.id ?? null,
+      status: items.length > 0 ? "in_progress" : "pending",
     }).select("id").single();
     if (vErr || !visit) { setBusy(false); return toast.error(vErr?.message ?? "Failed"); }
 
@@ -190,59 +205,51 @@ function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
     setBusy(false); toast.success(t("created")); onSaved();
   };
 
+  const selectedPatient = patients.find((p) => p.id === patient_id);
+  const medsById = new Map(meds.map((m) => [m.id, m]));
+  const groupedMeds = meds.reduce<Record<string, MedOpt[]>>((acc, m) => {
+    const k = m.category?.trim() || t("uncategorized");
+    (acc[k] ??= []).push(m);
+    return acc;
+  }, {});
+  const groupKeys = Object.keys(groupedMeds).sort();
+
   return (
     <DialogContent className="max-w-2xl">
       <DialogHeader><DialogTitle>{t("newVisit")}</DialogTitle></DialogHeader>
-      <form onSubmit={submit} className="space-y-3 max-h-[70vh] overflow-y-auto pe-1">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>{t("patient")}</Label>
-            <Select value={patient_id} onValueChange={setPatientId}>
-              <SelectTrigger><SelectValue placeholder={t("selectPatient")} /></SelectTrigger>
-              <SelectContent>{patients.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name} — {p.military_number}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t("priority")}</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(["low","medium","high","urgent"] as Priority[]).map((p) => <SelectItem key={p} value={p}>{t(p)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+      <form onSubmit={submit} className="space-y-4 max-h-[70vh] overflow-y-auto pe-1">
+        <div className="space-y-1.5">
+          <Label>{t("patient")}</Label>
+          <PatientPicker patients={patients} value={patient_id} onChange={setPatientId} selected={selectedPatient} />
         </div>
-        <div className="space-y-1.5"><Label>{t("diagnosis")}</Label><Input value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} /></div>
-        <div className="space-y-1.5"><Label>{t("patientNotes")}</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
 
         <div className="space-y-2 rounded-lg border border-border p-3">
           <div className="flex items-center justify-between">
             <Label>{t("prescription")}</Label>
-            <Button type="button" size="sm" variant="outline" onClick={addItem} disabled={meds.length === 0}><Plus className="h-3.5 w-3.5 me-1" />{t("addItem")}</Button>
+            <MedicinePicker grouped={groupedMeds} groupKeys={groupKeys} onPick={addMedicine} disabledIds={new Set(items.map((i) => i.medicine_id))} />
           </div>
           {items.length === 0 ? <p className="text-xs text-muted-foreground">—</p>
-            : items.map((it, i) => (
-              <div key={i} className="grid grid-cols-12 items-center gap-2">
-                <div className="col-span-6">
-                  <Select value={it.medicine_id} onValueChange={(v) => update(i, { medicine_id: v })}>
-                    <SelectTrigger><SelectValue placeholder={t("selectMedicine")} /></SelectTrigger>
-                    <SelectContent>{meds.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
-                  </Select>
+            : items.map((it, i) => {
+              const m = medsById.get(it.medicine_id);
+              return (
+                <div key={i} className="grid grid-cols-12 items-center gap-2">
+                  <div className="col-span-6 truncate text-sm">
+                    <div className="font-medium truncate">{m?.name ?? "—"}</div>
+                    {m?.category && <div className="text-xs text-muted-foreground truncate">{m.category}</div>}
+                  </div>
+                  <Input className="col-span-3" type="number" min={1} value={it.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
+                  <div className="col-span-2">
+                    <Select value={it.unit} onValueChange={(v) => update(i, { unit: v as Unit })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {UNITS.map((u) => <SelectItem key={u} value={u}>{t(u)}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="button" size="icon" variant="ghost" className="col-span-1" onClick={() => remove(i)}><X className="h-4 w-4" /></Button>
                 </div>
-                <Input className="col-span-3" type="number" min={1} value={it.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
-                <div className="col-span-2">
-                  <Select value={it.unit} onValueChange={(v) => update(i, { unit: v as RxItem["unit"] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pill">{t("pill")}</SelectItem>
-                      <SelectItem value="strip">{t("strip")}</SelectItem>
-                      <SelectItem value="box">{t("box")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="button" size="icon" variant="ghost" className="col-span-1" onClick={() => remove(i)}><X className="h-4 w-4" /></Button>
-              </div>
-            ))}
+              );
+            })}
         </div>
 
         <DialogFooter><Button type="submit" disabled={busy}>{busy ? "…" : t("save")}</Button></DialogFooter>
@@ -250,3 +257,74 @@ function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
     </DialogContent>
   );
 }
+
+function PatientPicker({ patients, value, onChange, selected }:
+  { patients: PatientOpt[]; value: string; onChange: (id: string) => void; selected?: PatientOpt }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" role="combobox" className="w-full justify-between">
+          {selected ? `${selected.full_name} — ${selected.military_number}` : t("selectPatient")}
+          <ChevronsUpDown className="h-4 w-4 opacity-50 ms-2" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command filter={(v, search) => v.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+          <CommandInput placeholder={t("searchPatient")} />
+          <CommandList>
+            <CommandEmpty>{t("noResults")}</CommandEmpty>
+            <CommandGroup>
+              {patients.map((p) => (
+                <CommandItem key={p.id} value={`${p.full_name} ${p.military_number}`}
+                  onSelect={() => { onChange(p.id); setOpen(false); }}>
+                  <Check className={cn("h-4 w-4 me-2", value === p.id ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">{p.full_name}</span>
+                  <span className="ms-auto text-xs text-muted-foreground">{p.military_number}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function MedicinePicker({ grouped, groupKeys, onPick, disabledIds }:
+  { grouped: Record<string, MedOpt[]>; groupKeys: string[]; onPick: (m: MedOpt) => void; disabledIds: Set<string> }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" size="sm" variant="outline">
+          <Plus className="h-3.5 w-3.5 me-1" />{t("addItem")}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[420px] p-0" align="end">
+        <Command filter={(v, search) => v.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+          <CommandInput placeholder={t("searchMedicine")} />
+          <CommandList className="max-h-[320px]">
+            <CommandEmpty>{t("noResults")}</CommandEmpty>
+            {groupKeys.map((g) => (
+              <CommandGroup key={g} heading={g}>
+                {grouped[g].map((m) => (
+                  <CommandItem key={m.id} value={`${m.name} ${m.commercial_name ?? ""} ${m.category ?? ""}`}
+                    disabled={disabledIds.has(m.id)}
+                    onSelect={() => { onPick(m); setOpen(false); }}>
+                    <span className="truncate">{m.name}</span>
+                    {m.commercial_name && <span className="ms-2 truncate text-xs text-muted-foreground">{m.commercial_name}</span>}
+                    <span className="ms-auto text-xs text-muted-foreground">{t(m.form as "formTablet") || m.form}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
