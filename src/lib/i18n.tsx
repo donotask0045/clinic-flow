@@ -96,7 +96,11 @@ const dict = {
     searchPatient: "Search patient…", searchMedicine: "Search medicine…",
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
-    delete: "Delete", confirmDelete: "Are you sure?",
+    delete: "Delete", confirmDelete: "Are you sure?", deleted: "Deleted",
+    confirmDeleteMedicine: "Delete this medicine and all related records?",
+    confirmDeletePatient: "Delete this patient and all related visits?",
+    confirmDeleteVisit: "Delete this visit and its prescriptions?",
+    autoClosed: "Visit closed automatically",
     // Shortages
     missingPills: "Missing pills", requestCount: "Requests", lastRequested: "Last requested",
     resolve: "Resolve", resolved: "Resolved", unresolved: "Unresolved", markResolved: "Mark resolved", noShortages: "No shortages",
