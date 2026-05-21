@@ -101,10 +101,6 @@ const dict = {
     confirmDeletePatient: "Delete this patient and all related visits?",
     confirmDeleteVisit: "Delete this visit and its prescriptions?",
     autoClosed: "Visit closed automatically",
-    confirmDeleteMedicine: "Delete this medicine and all related records?",
-    confirmDeletePatient: "Delete this patient and all related visits?",
-    confirmDeleteVisit: "Delete this visit and its prescriptions?",
-    autoClosed: "Visit closed automatically",
     // Shortages
     missingPills: "Missing pills", requestCount: "Requests", lastRequested: "Last requested",
     resolve: "Resolve", resolved: "Resolved", unresolved: "Unresolved", markResolved: "Mark resolved", noShortages: "No shortages",
