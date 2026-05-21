@@ -26,11 +26,14 @@ function PatientsPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const canWrite = user?.role === "admin" || user?.role === "doctor";
+  const canDelete = user?.role === "admin";
+  const del = useServerFn(deletePatient);
   const [rows, setRows] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Patient | null>(null);
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Patient | null>(null);
 
   const load = async () => {
     setLoading(true);
