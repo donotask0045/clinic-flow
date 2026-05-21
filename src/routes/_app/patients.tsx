@@ -128,17 +128,6 @@ function PatientsPage() {
     </div>
   );
 }
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 function PatientDialog({ editing, onSaved }: { editing: Patient | null; onSaved: () => void }) {
   const { t } = useI18n();
