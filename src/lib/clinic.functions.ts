@@ -100,3 +100,63 @@ export const closeVisit = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/** Delete a visit and all its prescriptions/items/archives. Admin only. */
+export const deleteVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ visit_id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertRole(context.userId, ["admin"]);
+    const { data: rxs } = await supabaseAdmin.from("prescriptions").select("id").eq("visit_id", data.visit_id);
+    const rxIds = (rxs ?? []).map((r) => r.id);
+    if (rxIds.length) {
+      await supabaseAdmin.from("prescription_items").delete().in("prescription_id", rxIds);
+      await supabaseAdmin.from("prescriptions").delete().in("id", rxIds);
+    }
+    await supabaseAdmin.from("archived_visits").delete().eq("visit_id", data.visit_id);
+    await supabaseAdmin.from("uploaded_files").delete().eq("visit_id", data.visit_id);
+    const { error } = await supabaseAdmin.from("visits").delete().eq("id", data.visit_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Delete a patient and cascade visits. Admin only. */
+export const deletePatient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ patient_id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertRole(context.userId, ["admin"]);
+    const { data: visits } = await supabaseAdmin.from("visits").select("id").eq("patient_id", data.patient_id);
+    for (const v of visits ?? []) {
+      const { data: rxs } = await supabaseAdmin.from("prescriptions").select("id").eq("visit_id", v.id);
+      const rxIds = (rxs ?? []).map((r) => r.id);
+      if (rxIds.length) {
+        await supabaseAdmin.from("prescription_items").delete().in("prescription_id", rxIds);
+        await supabaseAdmin.from("prescriptions").delete().in("id", rxIds);
+      }
+      await supabaseAdmin.from("archived_visits").delete().eq("visit_id", v.id);
+      await supabaseAdmin.from("uploaded_files").delete().eq("visit_id", v.id);
+    }
+    await supabaseAdmin.from("visits").delete().eq("patient_id", data.patient_id);
+    await supabaseAdmin.from("uploaded_files").delete().eq("patient_id", data.patient_id);
+    const { error } = await supabaseAdmin.from("patients").delete().eq("id", data.patient_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Delete a medicine and its dependents. Admin/pharmacist. */
+export const deleteMedicine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ medicine_id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertRole(context.userId, ["admin", "pharmacist"]);
+    await supabaseAdmin.from("prescription_items").delete().eq("medicine_id", data.medicine_id);
+    await supabaseAdmin.from("stock_movements").delete().eq("medicine_id", data.medicine_id);
+    await supabaseAdmin.from("shortages").delete().eq("medicine_id", data.medicine_id);
+    await supabaseAdmin.from("inventory_counts").delete().eq("medicine_id", data.medicine_id);
+    await supabaseAdmin.from("diagnoses_suggestions").delete().eq("medicine_id", data.medicine_id);
+    const { error } = await supabaseAdmin.from("medicines").delete().eq("id", data.medicine_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+

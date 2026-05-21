@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { closeVisit } from "@/lib/clinic.functions";
+import { closeVisit, deleteVisit } from "@/lib/clinic.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,25 +14,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Stethoscope, X, CheckCircle2, ChevronsUpDown, Check } from "lucide-react";
+import { Plus, Stethoscope, X, CheckCircle2, ChevronsUpDown, Check, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/visits")({ component: VisitsPage });
 
-type Priority = "low" | "medium" | "high";
 type Status = "pending" | "in_progress" | "partially_dispensed" | "dispensed" | "not_available" | "closed";
 type Visit = {
-  id: string; patient_id: string; status: Status; priority: Priority;
-  diagnosis: string | null; notes: string | null; created_at: string;
+  id: string; patient_id: string; status: Status; created_at: string;
   patients: { full_name: string; military_number: string } | null;
 };
 
-const priorityColor: Record<Priority, string> = {
-  low: "bg-muted text-muted-foreground",
-  medium: "bg-secondary text-secondary-foreground",
-  high: "bg-destructive text-destructive-foreground",
-};
 const statusColor: Record<Status, string> = {
   pending: "bg-warning/20 text-warning-foreground",
   in_progress: "bg-primary/15 text-primary",
@@ -49,16 +43,19 @@ function VisitsPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const close = useServerFn(closeVisit);
+  const del = useServerFn(deleteVisit);
   const canCreate = user?.role === "admin" || user?.role === "doctor";
+  const canDelete = user?.role === "admin";
   const [rows, setRows] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | Status>("all");
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Visit | null>(null);
 
   const load = async () => {
     setLoading(true);
     let q = supabase.from("visits")
-      .select("id, patient_id, status, priority, diagnosis, notes, created_at, patients(full_name, military_number)")
+      .select("id, patient_id, status, created_at, patients(full_name, military_number)")
       .order("created_at", { ascending: false }).limit(200);
     if (filter !== "all") q = q.eq("status", filter);
     const { data, error } = await q;
@@ -103,8 +100,6 @@ function VisitsPage() {
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 text-start">{t("patient")}</th>
-                      <th className="px-4 py-3 text-start">{t("diagnosis")}</th>
-                      <th className="px-4 py-3 text-start">{t("priority")}</th>
                       <th className="px-4 py-3 text-start">{t("status")}</th>
                       <th className="px-4 py-3 text-end">{t("actions")}</th>
                     </tr>
@@ -116,18 +111,21 @@ function VisitsPage() {
                           <div className="font-medium">{v.patients?.full_name ?? "—"}</div>
                           <div className="text-xs text-muted-foreground">{v.patients?.military_number}</div>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{v.diagnosis || "—"}</td>
-                        <td className="px-4 py-3"><Badge className={priorityColor[v.priority]}>{t(v.priority)}</Badge></td>
                         <td className="px-4 py-3"><Badge className={statusColor[v.status]}>{t(statusKey(v.status))}</Badge></td>
                         <td className="px-4 py-3 text-end">
-                          {v.status !== "closed" && (
-                            <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2">
+                            {v.status !== "closed" && (
                               <Button size="sm" variant="outline" onClick={async () => {
                                 try { await close({ data: { visit_id: v.id } }); toast.success(t("visitClosed")); load(); }
                                 catch (e) { toast.error((e as Error).message); }
                               }}><CheckCircle2 className="h-3.5 w-3.5 me-1" />{t("closeVisit")}</Button>
-                            </div>
-                          )}
+                            )}
+                            {canDelete && (
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setToDelete(v)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -137,6 +135,23 @@ function VisitsPage() {
             )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmDeleteVisit")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("close")}</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (!toDelete) return;
+              try { await del({ data: { visit_id: toDelete.id } }); toast.success(t("deleted")); setToDelete(null); load(); }
+              catch (e) { toast.error((e as Error).message); }
+            }}>{t("delete")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -146,16 +161,18 @@ type RxItem = { medicine_id: string; quantity: number; unit: Unit; notes?: strin
 type PatientOpt = { id: string; full_name: string; military_number: string };
 type MedOpt = { id: string; name: string; commercial_name: string | null; category: string | null; form: string };
 
-const UNITS: Unit[] = ["pill", "strip", "box", "injection", "syrup", "ointment", "ampoule", "tube"];
+function unitsForForm(form: string): Unit[] {
+  switch (form) {
+    case "tablet": return ["pill", "strip", "box"];
+    case "ointment": return ["ointment", "tube", "box"];
+    case "syrup": return ["syrup", "box"];
+    case "injection": return ["injection", "ampoule", "box"];
+    default: return ["box"];
+  }
+}
 
 function defaultUnitFor(form: string): Unit {
-  switch (form) {
-    case "tablet": return "pill";
-    case "injection": return "injection";
-    case "syrup": return "syrup";
-    case "ointment": return "ointment";
-    default: return "box";
-  }
+  return unitsForForm(form)[0];
 }
 
 function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
@@ -231,6 +248,7 @@ function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
           {items.length === 0 ? <p className="text-xs text-muted-foreground">—</p>
             : items.map((it, i) => {
               const m = medsById.get(it.medicine_id);
+              const units = unitsForForm(m?.form ?? "tablet");
               return (
                 <div key={i} className="grid grid-cols-12 items-center gap-2">
                   <div className="col-span-6 truncate text-sm">
@@ -242,7 +260,7 @@ function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
                     <Select value={it.unit} onValueChange={(v) => update(i, { unit: v as Unit })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {UNITS.map((u) => <SelectItem key={u} value={u}>{t(u)}</SelectItem>)}
+                        {units.map((u) => <SelectItem key={u} value={u}>{t(u)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -327,4 +345,3 @@ function MedicinePicker({ grouped, groupKeys, onPick, disabledIds }:
     </Popover>
   );
 }
-

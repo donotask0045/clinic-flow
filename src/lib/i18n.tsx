@@ -97,6 +97,10 @@ const dict = {
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
     delete: "Delete", confirmDelete: "Are you sure?",
+    confirmDeleteMedicine: "Delete this medicine and all related records?",
+    confirmDeletePatient: "Delete this patient and all related visits?",
+    confirmDeleteVisit: "Delete this visit and its prescriptions?",
+    autoClosed: "Visit closed automatically",
     // Shortages
     missingPills: "Missing pills", requestCount: "Requests", lastRequested: "Last requested",
     resolve: "Resolve", resolved: "Resolved", unresolved: "Unresolved", markResolved: "Mark resolved", noShortages: "No shortages",
@@ -193,6 +197,10 @@ const dict = {
     searchPatient: "ابحث عن مريض…", searchMedicine: "ابحث عن دواء…",
     edit: "تعديل", view: "عرض", details: "تفاصيل", close: "إغلاق", filter: "تصفية", all: "الكل",
     delete: "حذف", confirmDelete: "هل أنت متأكد؟",
+    confirmDeleteMedicine: "حذف هذا الدواء وكل ما يتعلق به؟",
+    confirmDeletePatient: "حذف هذا المريض وكل زياراته؟",
+    confirmDeleteVisit: "حذف هذه الزيارة وروشتاتها؟",
+    autoClosed: "تم إغلاق الزيارة تلقائيًا",
     missingPills: "أقراص ناقصة", requestCount: "عدد الطلبات", lastRequested: "آخر طلب",
     resolve: "حل", resolved: "تم الحل", unresolved: "غير محلولة", markResolved: "وضع كمحلول", noShortages: "لا توجد نواقص",
     action: "الإجراء", entity: "الكيان", actor: "المنفّذ", when: "الوقت", ipAddress: "IP", device: "الجهاز",

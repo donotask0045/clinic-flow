@@ -3,14 +3,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { deletePatient } from "@/lib/clinic.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Search, Users as UsersIcon } from "lucide-react";
+import { Plus, Pencil, Search, Users as UsersIcon, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/patients")({ component: PatientsPage });
 
@@ -23,11 +26,14 @@ function PatientsPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const canWrite = user?.role === "admin" || user?.role === "doctor";
+  const canDelete = user?.role === "admin";
+  const del = useServerFn(deletePatient);
   const [rows, setRows] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Patient | null>(null);
   const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Patient | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -81,11 +87,18 @@ function PatientsPage() {
                         <td className="px-4 py-3">{p.military_number}</td>
                         <td className="px-4 py-3 text-muted-foreground">{p.other_diseases || "—"}</td>
                         <td className="px-4 py-3 text-end">
-                          {canWrite && (
-                            <Button size="sm" variant="outline" onClick={() => { setEditing(p); setOpen(true); }}>
-                              <Pencil className="h-3.5 w-3.5 me-1" />{t("edit")}
-                            </Button>
-                          )}
+                          <div className="flex justify-end gap-2">
+                            {canWrite && (
+                              <Button size="sm" variant="outline" onClick={() => { setEditing(p); setOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5 me-1" />{t("edit")}
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setToDelete(p)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -95,6 +108,23 @@ function PatientsPage() {
             )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmDeletePatient")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("close")}</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (!toDelete) return;
+              try { await del({ data: { patient_id: toDelete.id } }); toast.success("Deleted"); setToDelete(null); load(); }
+              catch (e) { toast.error((e as Error).message); }
+            }}>{t("delete")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
