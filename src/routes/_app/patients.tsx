@@ -87,12 +87,47 @@ function PatientsPage() {
                         <td className="px-4 py-3">{p.military_number}</td>
                         <td className="px-4 py-3 text-muted-foreground">{p.other_diseases || "—"}</td>
                         <td className="px-4 py-3 text-end">
-                          {canWrite && (
-                            <Button size="sm" variant="outline" onClick={() => { setEditing(p); setOpen(true); }}>
-                              <Pencil className="h-3.5 w-3.5 me-1" />{t("edit")}
-                            </Button>
-                          )}
+                          <div className="flex justify-end gap-2">
+                            {canWrite && (
+                              <Button size="sm" variant="outline" onClick={() => { setEditing(p); setOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5 me-1" />{t("edit")}
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setToDelete(p)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmDeletePatient")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("close")}</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (!toDelete) return;
+              try { await del({ data: { patient_id: toDelete.id } }); toast.success("Deleted"); setToDelete(null); load(); }
+              catch (e) { toast.error((e as Error).message); }
+            }}>{t("delete")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
                       </tr>
                     ))}
                   </tbody>
