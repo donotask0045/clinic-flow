@@ -39,12 +39,14 @@ function InventoryPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const canWrite = user?.role === "admin" || user?.role === "pharmacist";
+  const del = useServerFn(deleteMedicine);
   const [rows, setRows] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Medicine | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [moving, setMoving] = useState<Medicine | null>(null);
+  const [toDelete, setToDelete] = useState<Medicine | null>(null);
 
   const load = async () => {
     setLoading(true);
