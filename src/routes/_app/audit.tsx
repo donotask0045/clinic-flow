@@ -134,12 +134,13 @@ function AuditPage() {
               </div>
               <div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">{t("beforeData")}</div>
-                <pre className="bg-muted rounded-md p-3 text-xs overflow-auto max-h-48">{JSON.stringify(selected.before_data ?? null, null, 2)}</pre>
+                <RecordLines data={selected.before_data} />
               </div>
               <div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">{t("afterData")}</div>
-                <pre className="bg-muted rounded-md p-3 text-xs overflow-auto max-h-48">{JSON.stringify(selected.after_data ?? null, null, 2)}</pre>
+                <RecordLines data={selected.after_data} />
               </div>
+
             </div>
           )}
         </DialogContent>
