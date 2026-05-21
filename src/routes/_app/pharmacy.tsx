@@ -68,16 +68,29 @@ function PharmacyPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const dispenseItem = async (item: Item, pills: number) => {
+  const dispenseItem = async (item: Item, pills: number, visit: QueueVisit) => {
     setBusy(item.id);
     try {
       const res = await dispense({ data: { item_id: item.id, pills } }) as { dispensed: number; missing: number };
       if (res.missing > 0) toast.warning(`${t("partialDispense")} (${res.dispensed}/${pills})`);
       else toast.success(`${t("dispensed")}: ${res.dispensed}`);
+
+      // Check if all items are now fully dispensed → auto-close
+      const allItems = visit.prescriptions.flatMap((rx) => rx.prescription_items);
+      const willBeDone = allItems.every((it) => {
+        const need = pillsFor(it);
+        const newDisp = it.id === item.id ? it.dispensed_pills + res.dispensed : it.dispensed_pills;
+        return newDisp >= need;
+      });
+      if (willBeDone) {
+        try { await close({ data: { visit_id: visit.id } }); toast.success(t("autoClosed")); }
+        catch (e) { toast.error((e as Error).message); }
+      }
       await load();
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusy(null); }
   };
+
 
   const closeQueueVisit = async (v: QueueVisit) => {
     try { await close({ data: { visit_id: v.id } }); toast.success(t("visitClosed")); load(); }
