@@ -144,7 +144,7 @@ function PharmacyPage() {
                         return (
                           <DispenseRow key={it.id} it={it} need={need} remaining={remaining}
                             stock={stock} busy={busy === it.id}
-                            onDispense={(n) => dispenseItem(it, n)} />
+                            onDispense={(n) => dispenseItem(it, n, v)} />
                         );
                       })}
                     </tbody>
