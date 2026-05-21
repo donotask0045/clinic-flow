@@ -148,3 +148,39 @@ function AuditPage() {
     </div>
   );
 }
+
+const HIDDEN_FIELDS = new Set(["id", "created_at", "updated_at"]);
+
+function formatValue(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "boolean") return v ? "✓" : "✗";
+  if (typeof v === "string") {
+    // ISO date detection
+    if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
+      const d = new Date(v);
+      if (!isNaN(d.getTime())) return d.toLocaleString();
+    }
+    return v;
+  }
+  if (typeof v === "number") return String(v);
+  return JSON.stringify(v);
+}
+
+function RecordLines({ data }: { data: unknown }) {
+  if (!data || typeof data !== "object") {
+    return <div className="bg-muted rounded-md p-3 text-xs text-muted-foreground">—</div>;
+  }
+  const entries = Object.entries(data as Record<string, unknown>)
+    .filter(([k]) => !HIDDEN_FIELDS.has(k));
+  return (
+    <div className="bg-muted rounded-md p-3 text-xs space-y-1">
+      {entries.map(([k, v]) => (
+        <div key={k} className="flex gap-2">
+          <span className="font-medium text-muted-foreground min-w-[8rem]">{k}:</span>
+          <span className="break-all">{formatValue(v)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
