@@ -113,6 +113,7 @@ function InventoryPage() {
                             <div className="flex justify-end gap-2">
                               <Button size="sm" variant="outline" onClick={() => setMoving(m)}><ArrowDownToLine className="h-3.5 w-3.5 me-1" />{t("stockMovement")}</Button>
                               <Button size="sm" variant="ghost" onClick={() => { setEditing(m); setOpenEdit(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setToDelete(m)}><Trash2 className="h-3.5 w-3.5" /></Button>
                             </div>
                           )}
                         </td>
@@ -126,6 +127,24 @@ function InventoryPage() {
       </Card>
 
       <MovementDialog target={moving} onClose={() => setMoving(null)} onSaved={() => { setMoving(null); load(); }} />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmDeleteMedicine")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("close")}</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (!toDelete) return;
+              try { await del({ data: { medicine_id: toDelete.id } }); toast.success("Deleted"); setToDelete(null); load(); }
+              catch (e) { toast.error((e as Error).message); }
+            }}>{t("delete")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
