@@ -96,7 +96,11 @@ const dict = {
     searchPatient: "Search patient…", searchMedicine: "Search medicine…",
     // Shared
     edit: "Edit", view: "View", details: "Details", close: "Close", filter: "Filter", all: "All",
-    delete: "Delete", confirmDelete: "Are you sure?", deleted: "Deleted",
+    delete: "Delete", confirmDelete: "Are you sure?",
+    confirmDeleteMedicine: "Delete this medicine and all related records?",
+    confirmDeletePatient: "Delete this patient and all related visits?",
+    confirmDeleteVisit: "Delete this visit and its prescriptions?",
+    autoClosed: "Visit closed automatically",
     confirmDeleteMedicine: "Delete this medicine and all related records?",
     confirmDeletePatient: "Delete this patient and all related visits?",
     confirmDeleteVisit: "Delete this visit and its prescriptions?",
