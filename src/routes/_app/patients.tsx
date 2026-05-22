@@ -13,7 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Search, Users as UsersIcon, Trash2 } from "lucide-react";
+import { Plus, Pencil, Search, Users as UsersIcon, Trash2, Upload, FileSpreadsheet } from "lucide-react";
+import { downloadXlsx, readXlsx, pick } from "@/lib/excel";
+import { useRef } from "react";
 
 export const Route = createFileRoute("/_app/patients")({ component: PatientsPage });
 
@@ -45,18 +47,57 @@ function PatientsPage() {
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [q]);
 
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onImport = async (file: File) => {
+    try {
+      const rows = await readXlsx(file);
+      const payload = rows
+        .map((r) => ({
+          full_name: String(pick(r, ["full_name", "name", "الاسم", "اسم"]) ?? "").trim(),
+          military_number: String(pick(r, ["military_number", "military", "الرقم العسكري", "رقم عسكري"]) ?? "").trim(),
+          other_diseases: (pick(r, ["other_diseases", "diseases", "الأمراض"]) as string) || null,
+          notes: (pick(r, ["notes", "ملاحظات"]) as string) || null,
+        }))
+        .filter((p) => p.full_name && p.military_number);
+      if (!payload.length) return toast.error(t("importFailed"));
+      const { error } = await supabase.from("patients").insert(payload);
+      if (error) return toast.error(error.message);
+      toast.success(`${t("imported")}: ${payload.length}`);
+      load();
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const downloadTemplate = () => {
+    downloadXlsx([{ full_name: "Sample Name", military_number: "123456", other_diseases: "", notes: "" }], "patients_template.xlsx", "patients");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{t("patients")}</h1>
-        {canWrite && (
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-1" />{t("addPatient")}</Button>
-            </DialogTrigger>
-            <PatientDialog editing={editing} onSaved={() => { setOpen(false); setEditing(null); load(); }} />
-          </Dialog>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {canWrite && (
+            <>
+              <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f); if (fileRef.current) fileRef.current.value = ""; }} />
+              <Button variant="outline" onClick={() => fileRef.current?.click()}>
+                <Upload className="h-4 w-4 me-1" />{t("importExcel")}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={downloadTemplate}>
+                <FileSpreadsheet className="h-4 w-4 me-1" />{t("downloadTemplate")}
+              </Button>
+            </>
+          )}
+          {canWrite && (
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-1" />{t("addPatient")}</Button>
+              </DialogTrigger>
+              <PatientDialog editing={editing} onSaved={() => { setOpen(false); setEditing(null); load(); }} />
+            </Dialog>
+          )}
+        </div>
       </div>
 
       <div className="relative max-w-md">

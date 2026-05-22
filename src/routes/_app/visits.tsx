@@ -161,18 +161,14 @@ type RxItem = { medicine_id: string; quantity: number; unit: Unit; notes?: strin
 type PatientOpt = { id: string; full_name: string; military_number: string };
 type MedOpt = { id: string; name: string; commercial_name: string | null; category: string | null; form: string };
 
-function unitsForForm(form: string): Unit[] {
-  switch (form) {
-    case "tablet": return ["pill", "strip", "box"];
-    case "ointment": return ["ointment", "tube", "box"];
-    case "syrup": return ["syrup", "box"];
-    case "injection": return ["injection", "ampoule", "box"];
-    default: return ["box"];
-  }
-}
-
+const ALL_UNITS: Unit[] = ["pill", "strip", "ointment", "tube", "syrup", "injection", "ampoule", "box"];
+function unitsForForm(_form: string): Unit[] { return ALL_UNITS; }
 function defaultUnitFor(form: string): Unit {
-  return unitsForForm(form)[0];
+  if (form === "tablet") return "pill";
+  if (form === "ointment") return "ointment";
+  if (form === "syrup") return "syrup";
+  if (form === "injection") return "injection";
+  return "box";
 }
 
 function NewVisitDialog({ onSaved }: { onSaved: () => void }) {
