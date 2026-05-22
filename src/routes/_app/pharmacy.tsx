@@ -120,7 +120,9 @@ function PharmacyPage() {
                     <p className="text-xs text-muted-foreground">{v.patients?.military_number} · {new Date(v.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">{t(v.priority as "low")}</Badge>
+                    <Badge className={allDone ? "bg-success/20 text-success-foreground" : "bg-warning/20 text-warning-foreground"}>
+                      {allDone ? t("fullyDispensed") : t("hasShortage")}
+                    </Badge>
                     <Button size="sm" variant={allDone ? "default" : "outline"} onClick={() => closeQueueVisit(v)}>
                       <CheckCircle2 className="h-4 w-4 me-1" />{t("closeVisit")}
                     </Button>

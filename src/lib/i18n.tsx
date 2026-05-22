@@ -107,6 +107,9 @@ const dict = {
     // Audit
     action: "Action", entity: "Entity", actor: "Actor", when: "When", ipAddress: "IP", device: "Device",
     beforeData: "Before", afterData: "After", noAudit: "No audit entries", viewDetails: "View details",
+    fullyDispensed: "Fully dispensed", hasShortage: "Has shortage",
+    importExcel: "Import from Excel", exportExcel: "Export to Excel", printList: "Print list",
+    downloadTemplate: "Download template", imported: "Imported", importFailed: "Import failed",
   },
   ar: {
     appName: "العيادة والصيدلية",
@@ -205,6 +208,9 @@ const dict = {
     resolve: "حل", resolved: "تم الحل", unresolved: "غير محلولة", markResolved: "وضع كمحلول", noShortages: "لا توجد نواقص",
     action: "الإجراء", entity: "الكيان", actor: "المنفّذ", when: "الوقت", ipAddress: "IP", device: "الجهاز",
     beforeData: "قبل", afterData: "بعد", noAudit: "لا توجد سجلات", viewDetails: "عرض التفاصيل",
+    fullyDispensed: "تم الصرف كاملًا", hasShortage: "هناك عجز",
+    importExcel: "استيراد من Excel", exportExcel: "تصدير إلى Excel", printList: "طباعة القائمة",
+    downloadTemplate: "تحميل قالب", imported: "تم الاستيراد", importFailed: "فشل الاستيراد",
   },
 } as const;
 
