@@ -15,7 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Boxes, ArrowDownToLine, Search, Trash2 } from "lucide-react";
+import { Plus, Pencil, Boxes, ArrowDownToLine, Search, Trash2, Upload, FileSpreadsheet, Printer } from "lucide-react";
+import { downloadXlsx, readXlsx, pick } from "@/lib/excel";
+import { useRef } from "react";
 
 export const Route = createFileRoute("/_app/inventory")({ component: InventoryPage });
 
@@ -58,18 +60,69 @@ function InventoryPage() {
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [q]);
 
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onImport = async (file: File) => {
+    try {
+      const data = await readXlsx(file);
+      const payload = data.map((r) => ({
+        name: String(pick(r, ["name", "الاسم", "اسم الدواء"]) ?? "").trim(),
+        commercial_name: (pick(r, ["commercial_name", "commercial", "الاسم التجاري"]) as string) || null,
+        barcode: (pick(r, ["barcode", "الباركود"]) as string) || null,
+        form: ((pick(r, ["form", "الشكل"]) as string) || "tablet").toLowerCase() as "tablet",
+        category: (pick(r, ["category", "الفئة"]) as string) || null,
+        pills_per_strip: Number(pick(r, ["pills_per_strip", "أقراص/شريط"]) ?? 1) || 1,
+        strips_per_box: Number(pick(r, ["strips_per_box", "شرائط/علبة"]) ?? 1) || 1,
+        total_pills: Number(pick(r, ["total_pills", "إجمالي", "quantity", "الكمية"]) ?? 0) || 0,
+        minimum_pills: Number(pick(r, ["minimum_pills", "min", "الحد الأدنى"]) ?? 0) || 0,
+        expiry_date: (pick(r, ["expiry_date", "expiry", "تاريخ الانتهاء"]) as string) || null,
+      })).filter((m) => m.name);
+      if (!payload.length) return toast.error(t("importFailed"));
+      const { error } = await supabase.from("medicines").insert(payload as never);
+      if (error) return toast.error(error.message);
+      toast.success(`${t("imported")}: ${payload.length}`);
+      load();
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const exportXlsx = () => {
+    downloadXlsx(rows.map((m) => ({
+      name: m.name, commercial_name: m.commercial_name, barcode: m.barcode,
+      form: m.form, category: m.category,
+      total_pills: m.total_pills, minimum_pills: m.minimum_pills,
+      pills_per_strip: m.pills_per_strip, strips_per_box: m.strips_per_box,
+      expiry_date: m.expiry_date, status: m.status,
+    })), `inventory_${new Date().toISOString().slice(0, 10)}.xlsx`, "inventory");
+  };
+
+  const downloadTemplate = () => {
+    downloadXlsx([{ name: "Paracetamol", commercial_name: "Panadol", barcode: "", form: "tablet", category: "Cold", pills_per_strip: 10, strips_per_box: 2, total_pills: 100, minimum_pills: 20, expiry_date: "2027-01-01" }], "inventory_template.xlsx", "inventory");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{t("inventory")}</h1>
-        {canWrite && (
-          <Dialog open={openEdit} onOpenChange={(o) => { setOpenEdit(o); if (!o) setEditing(null); }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-1" />{t("addMedicine")}</Button>
-            </DialogTrigger>
-            <MedicineDialog editing={editing} onSaved={() => { setOpenEdit(false); setEditing(null); load(); }} />
-          </Dialog>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {canWrite && (
+            <>
+              <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f); if (fileRef.current) fileRef.current.value = ""; }} />
+              <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4 me-1" />{t("importExcel")}</Button>
+              <Button variant="ghost" size="sm" onClick={downloadTemplate}><FileSpreadsheet className="h-4 w-4 me-1" />{t("downloadTemplate")}</Button>
+            </>
+          )}
+          <Button variant="outline" onClick={exportXlsx}><FileSpreadsheet className="h-4 w-4 me-1" />{t("exportExcel")}</Button>
+          <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 me-1" />{t("printList")}</Button>
+          {canWrite && (
+            <Dialog open={openEdit} onOpenChange={(o) => { setOpenEdit(o); if (!o) setEditing(null); }}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-1" />{t("addMedicine")}</Button>
+              </DialogTrigger>
+              <MedicineDialog editing={editing} onSaved={() => { setOpenEdit(false); setEditing(null); load(); }} />
+            </Dialog>
+          )}
+        </div>
       </div>
 
       <div className="relative max-w-md">
